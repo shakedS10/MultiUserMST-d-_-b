@@ -1,0 +1,99 @@
+        -:    0:Source:leader_follower.hpp
+        -:    1:
+        -:    2:#pragma once
+        -:    3:
+        -:    4:#include <iostream>
+        -:    5:#include <string>
+        -:    6:#include <vector>
+        -:    7:#include <queue>
+        -:    8:#include <thread>
+        -:    9:#include <mutex>
+        -:   10:#include <functional>
+        -:   11:#include <atomic>
+        -:   12:
+        -:   13:using namespace std;
+        -:   14:
+        -:   15:using LFtaskFunc = function<bool()>;
+        -:   16:// FIXED - changed to atomic to fix crashing issue ~shaked :) 
+        -:   17:class LF {
+        -:   18:private:
+        -:   19:    int numThreads;
+        -:   20:    atomic<int> leader;
+        -:   21:    atomic<bool> quit;
+        -:   22:    mutex mtx;
+        -:   23:    vector<thread> followers;
+        -:   24:    queue<LFtaskFunc> tasks;
+        -:   25:
+        -:   26:public:
+        1:   27:    LF(int numThreads) : numThreads(numThreads), leader(numThreads), quit(false) {}
+        -:   28:
+    #####:   29:    void start() {
+    #####:   30:        for (int i = 0; i < this->numThreads; i++) {
+    #####:   31:            followers.emplace_back([this, i]() { this->run(i); });
+        -:   32:        }
+    #####:   33:    }
+        -:   34:
+        1:   35:    void join() {
+        1:   36:        quit.store(true);
+        -:   37:
+        -:   38:  
+       1*:   39:        for (auto& t : followers) {
+    #####:   40:            t.join();
+        -:   41:        }
+        1:   42:    }
+        -:   43:
+    #####:   44:    void addTask(LFtaskFunc task) {
+    #####:   45:        lock_guard<mutex> lock(mtx);
+    #####:   46:        tasks.push(task);
+    #####:   47:    }
+        -:   48:
+        1:   49:    void close() {
+        1:   50:        quit.store(true);
+        1:   51:    }
+        -:   52:
+        -:   53:private:
+    #####:   54:    void proccessTask(LFtaskFunc task) {
+    #####:   55:        task();
+    #####:   56:    }
+        -:   57:
+    #####:   58:    void promoteLeader(int id) {
+    #####:   59:        leader.store(id);
+    #####:   60:    }
+        -:   61:
+    #####:   62:    bool isLeader(int id) const {
+    #####:   63:        return leader.load() == id;
+        -:   64:    }
+        -:   65:
+    #####:   66:    bool hasLeader() const {
+    #####:   67:        return leader.load() != numThreads;
+        -:   68:    }
+        -:   69:
+    #####:   70:    void removeLeader() {
+    #####:   71:        leader.store(numThreads);
+    #####:   72:    }
+        -:   73:
+    #####:   74:    LFtaskFunc getTask() {
+    #####:   75:        lock_guard<mutex> lock(mtx);
+    #####:   76:        if (tasks.empty()) {
+    #####:   77:            return nullptr;
+        -:   78:        }
+    #####:   79:        LFtaskFunc task = tasks.front();
+    #####:   80:        tasks.pop();
+    #####:   81:        return task;
+    #####:   82:    }
+        -:   83:
+    #####:   84:    void run(int id) {
+    #####:   85:        while (!quit.load()) {
+    #####:   86:            if (!hasLeader()) {
+    #####:   87:                promoteLeader(id);
+        -:   88:            }
+    #####:   89:            if (isLeader(id)) {
+    #####:   90:                LFtaskFunc task = getTask();
+    #####:   91:                if (task) {
+    #####:   92:                    proccessTask(task);
+        -:   93:                }
+    #####:   94:                removeLeader();
+    #####:   95:            }
+        -:   96:        }
+    #####:   97:    }
+        -:   98:};

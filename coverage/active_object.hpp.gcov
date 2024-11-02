@@ -1,0 +1,71 @@
+        -:    0:Source:active_object.hpp
+        -:    1:#pragma once
+        -:    2:
+        -:    3:#include <iostream>
+        -:    4:#include <string>
+        -:    5:#include <cstring>
+        -:    6:#include <cstdlib>
+        -:    7:#include <vector>
+        -:    8:#include <thread>
+        -:    9:#include <queue>
+        -:   10:#include <mutex>
+        -:   11:
+        -:   12:
+        -:   13:using namespace std;
+        -:   14:
+        -:   15://typedef void (*PLtaskFunc)();
+        -:   16:using PLtaskFunc = function<void()>;
+        -:   17:
+        -:   18:class ActiveObject{
+        -:   19:	private:
+        -:   20:		thread task;
+        -:   21:		queue<function<void()>> tasks;
+        -:   22:		bool quit;
+        -:   23:		bool end_task;
+        -:   24:		//mutex mtx;
+        -:   25:
+        -:   26:
+       10:   27:		void run(){
+     2578:   28:			while (!this->quit){
+     2568:   29:				PLtaskFunc func = this->getTask();
+     2568:   30:				if (func != nullptr) {
+        -:   31:					//this->mtx.lock();
+       10:   32:					this->end_task = false;
+       10:   33:					func();
+        -:   34:					//cout << -1 << endl;
+       10:   35:					this->end_task = true;
+        -:   36:					//this->mtx.unlock();
+        -:   37:				}
+     2568:   38:			}
+       10:   39:		}
+        -:   40:	public:
+       10:   41:	    ActiveObject(){
+       10:   42:			this->quit = false;
+       10:   43:			this->end_task = false;
+       10:   44:		}
+       10:   45:		void join(){
+       10:   46:			this->task.join();
+       10:   47:		}
+     2962:   48:		bool is_end_task() { return this->end_task; }
+       10:   49:		void setCondition(bool quit){
+       10:   50:            this->quit = quit;
+       10:   51:        }
+        -:   52:
+       10:   53:		void start(){
+       20:   54:			this->task = thread([this]() {this->run();});
+       10:   55:		}
+       10:   56:		void request(PLtaskFunc task){
+       10:   57:			this->tasks.push(task);
+       10:   58:		}
+        -:   59:
+     2568:   60:		PLtaskFunc getTask(){
+     2568:   61:			if (this->tasks.size() == 0) return nullptr;
+       10:   62:			PLtaskFunc func = this->tasks.front();
+       10:   63:			this->tasks.pop();
+       10:   64:			return func;
+       10:   65:		}
+        -:   66:
+        -:   67:
+        -:   68:
+        -:   69:};
+        -:   70:

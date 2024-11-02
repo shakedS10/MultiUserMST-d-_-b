@@ -1,0 +1,386 @@
+        -:    0:Source:main.cpp
+        -:    1:#include <iostream>
+        -:    2:#include <string>
+        -:    3:#include <sstream>
+        -:    4:#include <vector>
+        -:    5:#include <algorithm>
+        -:    6:
+        -:    7:#include "proactor.hpp"
+        -:    8:
+        -:    9:#include "graph.hpp"
+        -:   10:#include "tree.hpp"
+        -:   11:
+        -:   12:#include "factory.hpp"
+        -:   13:#include "leader_follower.hpp"
+        -:   14:#include "active_object.hpp"
+        -:   15:#include "pipeline.hpp"
+        -:   16:
+        -:   17:#include <mutex>
+        -:   18:#include <pthread.h>
+        -:   19:
+        -:   20:#include <unistd.h>
+        -:   21:#include <sys/types.h>
+        -:   22:#include <sys/socket.h>
+        -:   23:#include <netinet/in.h>
+        -:   24:#include <arpa/inet.h>
+        -:   25:#include <netdb.h>
+        -:   26:
+        -:   27:
+        -:   28:
+        -:   29:
+        -:   30:using namespace std;
+        -:   31:
+        -:   32:
+        -:   33:bool is_pipeline = false;
+        -:   34:bool closed = false;
+        -:   35://Reactor* reactor;
+        -:   36:std::unique_ptr<Proactor> proactor;
+        -:   37:LF lf(5);
+        -:   38:mutex mtx;
+        -:   39:
+    #####:   40:void* get_in_addr(struct sockaddr *sa)
+        -:   41:{
+    #####:   42:        if (sa->sa_family == AF_INET) {
+    #####:   43:            return &(((struct sockaddr_in*)sa)->sin_addr);
+        -:   44:        }
+    #####:   45:        return &(((struct sockaddr_in6*)sa)->sin6_addr);
+        -:   46:}
+        -:   47:
+        1:   48:int Listener(int nport = 9035) {
+        1:   49:    int yes=1;        // For setsockopt() SO_REUSEADDR, below
+        -:   50:    int rv, fd;
+        -:   51:
+        -:   52:
+        -:   53:    struct addrinfo hints, *ai, *p;
+        -:   54:
+        -:   55:    // Get us a socket and bind it
+        1:   56:    memset(&hints, 0, sizeof(hints));
+        1:   57:    hints.ai_family = AF_UNSPEC;
+        1:   58:    hints.ai_socktype = SOCK_STREAM;
+        1:   59:    hints.ai_flags = AI_PASSIVE;
+        -:   60:    //std::to_string(port).c_str()
+        -:   61:
+        1:   62:    string port_str = to_string(nport);
+        1:   63:    if ((rv = getaddrinfo(NULL, port_str.c_str(), &hints, &ai)) != 0) {
+    #####:   64:        cerr << "selectserver: " << gai_strerror(rv) << endl;
+    #####:   65:        exit(1);
+        -:   66:    }
+        -:   67:    
+       1*:   68:    for(p = ai; p != NULL; p = p->ai_next) {
+        1:   69:        fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+       1*:   70:        if (fd < 0) { 
+    #####:   71:            continue;
+        -:   72:        }
+        -:   73:        
+        -:   74:        // Lose the pesky "address already in use" error message
+        1:   75:        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+        -:   76:
+       1*:   77:        if (bind(fd, p->ai_addr, p->ai_addrlen) < 0) {
+    #####:   78:            close(fd);
+    #####:   79:            continue;
+        -:   80:        }
+        -:   81:
+        1:   82:        break;
+        -:   83:    }
+        -:   84:
+        1:   85:    freeaddrinfo(ai); // All done with this
+        -:   86:
+       1*:   87:    if (p == NULL) return -1;
+        -:   88:
+        -:   89:    // Listen
+        1:   90:    listen(fd, 10);
+        1:   91:    return fd;
+        1:   92:}
+        -:   93:
+       10:   94:void calc(int& id, Graph& graph, Tree& mst, string algo, stringstream& ss){
+        -:   95:    //cout << id << endl;
+       10:   96:    if (id == 0) {
+        -:   97:        MSTFactory factory;
+        2:   98:        mst = factory.createMST(algo)->execute(graph);
+        2:   99:        mst.floydWarshall();
+        2:  100:        ss << "MST: " << endl;
+        8:  101:        for (int i = 0; i < mst.getV(); i++) {
+       24:  102:            for (int j = 0; j < mst.getV(); j++) {
+        -:  103:                
+       18:  104:                ss << std::to_string(mst.getWeight(i, j)) << " ";
+        -:  105:            }
+        6:  106:            ss << endl;
+        -:  107:        }
+        -:  108:        
+        -:  109:	}
+        8:  110:	else if (id == 1){ 
+        2:  111:        ss << "total weight: " << mst.calc_weight() << endl;
+        6:  112:    } else if (id == 2) {
+        2:  113:        ss << "avg Dis: " << mst.avgDistance() << endl;
+        4:  114:    } else if (id == 3) {
+        2:  115:        ss << "max Dis: " << mst.maxDistance() << endl;
+        2:  116:    } else if (id == 4) {
+        2:  117:        ss << "min Dis: " << mst.minDistance() << endl;
+        -:  118:    }
+        -:  119:    //id++;
+        -:  120:    
+       10:  121:}
+        -:  122:
+    #####:  123:bool calcAll(Graph& graph, Tree& mst, string algo, stringstream& ss, int& checkFinished){
+    #####:  124:    this_thread::sleep_for(chrono::seconds(1));
+        -:  125:    MSTFactory factory;
+    #####:  126:    mst = factory.createMST(algo)->execute(graph);
+    #####:  127:    mst.floydWarshall();
+    #####:  128:    ss << "MST: " << endl;
+    #####:  129:    for (int i = 0; i < mst.getV(); i++) {
+    #####:  130:        for (int j = 0; j < mst.getV(); j++) {
+    #####:  131:            ss << std::to_string(mst.getWeight(i, j)) << " ";
+        -:  132:        }
+    #####:  133:        ss << endl;
+        -:  134:    }
+    #####:  135:    ss << "total weight: " << mst.calc_weight() << endl;
+    #####:  136:    ss << "avg Dis: " << mst.avgDistance() << endl;
+    #####:  137:    ss << "max Dis: " << mst.maxDistance() << endl;
+    #####:  138:    ss << "min Dis: " << mst.minDistance() << endl;
+    #####:  139:    checkFinished = 1;
+    #####:  140:    return true;
+        -:  141:}
+        -:  142:
+        -:  143:
+        6:  144:void proccessCommand(string line, Graph& graph, Tree& mst, bool& is_graph, int fd, stringstream& ss) {
+        6:  145:    cout << "ProccessCommand: " << line << endl;
+        6:  146:    ss.str("");
+        6:  147:    if(line[0] == 'g'){
+        1:  148:        int m = stoi(line.substr(line.find(" ") + 1, line.find(",")));
+        1:  149:        int n = stoi(line.substr(line.find(",") + 1, line.length()));
+        2:  150:        vector<vector<int>> newGraph(n, vector<int>(n, 0));
+        -:  151:
+        1:  152:        graph = Graph(m, n);
+        -:  153:
+        -:  154:        char buf[256];
+        -:  155:        int nbytes;
+        1:  156:        cout << "format: 'a' 'b' 'w'" << endl;
+        3:  157:        for(int i = 0; i < m; i++){
+        2:  158:            nbytes = recv(fd, buf, sizeof(buf), 0);
+        -:  159:            
+        2:  160:            string s1 = buf;
+        2:  161:            int f1 = s1.find(" ");
+        2:  162:            int f2 = s1.find(" ", s1.find(" ") + 1);
+        2:  163:            int a = stoi(s1.substr(0, f1));
+        2:  164:            int b = stoi(s1.substr(f1 + 1, f2));
+        2:  165:            int w = stoi(s1.substr(f2 + 1, s1.length()));
+        -:  166:            
+        -:  167:
+        2:  168:            if(a != b){
+        2:  169:                cout << "a: " << a << endl;
+        2:  170:                cout << "b: " << b << endl;
+        2:  171:                cout << "w: " << w << endl;
+        -:  172:                
+        2:  173:                graph.addEdge(a, b, w);
+        -:  174:            }
+        -:  175:            else{
+    #####:  176:                i--;
+        -:  177:            }
+        2:  178:        }
+        1:  179:        is_graph = true;
+        1:  180:        ss << "new graph: " << endl;
+        4:  181:        for (int i = 0; i < n; i++) {
+       12:  182:            for (int j = 0; j < n; j++) {
+        -:  183:                
+        9:  184:                ss << graph.getWeight(i, j) << " ";
+        -:  185:            }
+        3:  186:            ss << endl;
+        -:  187:        }
+        -:  188:
+        1:  189:    }
+        5:  190:    else if (line[0] == 'p'){
+        1:  191:        ss.str("");
+        1:  192:        ss.clear();
+        1:  193:        if (is_graph) {
+        1:  194:            if (!is_pipeline){
+    #####:  195:                int checkFinished = 0;
+    #####:  196:                auto func = [&graph, &mst, &ss, &checkFinished] () {
+    #####:  197:                    return calcAll(graph, mst, "prim", ss, checkFinished);
+    #####:  198:                };
+    #####:  199:                lf.addTask(func);
+    #####:  200:                while (checkFinished == 0);
+        -:  201:                
+        -:  202:            } else {
+        1:  203:                PipeLine p(5);
+        -:  204:                
+       10:  205:                auto func = [&graph, &mst](int& i, stringstream& ss1){
+        5:  206:                    calc(i, graph, mst, "prim", ss1);
+        5:  207:                };
+        1:  208:                ss << p.start(func).str();
+        1:  209:                p.join();
+        1:  210:            }
+        -:  211:        }
+        -:  212:        
+        -:  213:    }
+        -:  214:
+        4:  215:    else if (line[0] == 'k'){
+        1:  216:        ss.str("");
+        1:  217:        ss.clear();
+        1:  218:        if (is_graph) {
+        1:  219:            if (!is_pipeline){
+    #####:  220:                int checkFinished = 0;
+    #####:  221:                auto func = [&graph, &mst, &ss, &checkFinished] () {
+    #####:  222:                    return calcAll(graph, mst, "kruskal", ss, checkFinished);
+    #####:  223:                };
+    #####:  224:                lf.addTask(func);
+    #####:  225:                while (checkFinished == 0);
+        -:  226:            } else {
+        1:  227:                PipeLine p(5);
+       10:  228:                auto func = [&graph, &mst](int& i, stringstream& ss1){
+        5:  229:                    calc(i, graph, mst, "kruskal", ss1);
+        5:  230:                };
+        1:  231:                ss << p.start(func).str();
+        1:  232:                p.join();
+        1:  233:            }
+        -:  234:        }
+        -:  235:    }
+        -:  236:
+        3:  237:    else if(line[0] == 'n'){
+        1:  238:        int f1 = line.find(" ");
+        1:  239:        int f2 = line.find(" ", f1 + 1);
+        1:  240:        int f3 = line.find(" ", f2 + 1);
+        1:  241:        int a = stoi(line.substr(f1 + 1, f2));
+        1:  242:        int b = stoi(line.substr(f2 + 1, f3));
+        1:  243:        int w = stoi(line.substr(f3 + 1, line.length()));
+        1:  244:        if (is_graph) {
+        1:  245:            graph.addEdge(a, b, w);
+        1:  246:            ss << "new edge: " << a << " " << b << " " << w << endl;
+        -:  247:        }
+        -:  248:        
+        -:  249:    }
+        -:  250:
+        2:  251:    else if(line[0] == 'r'){
+        1:  252:        int f1 = line.find(" ");
+        1:  253:        int f2 = line.find(" ", f1 + 1);
+        1:  254:        int a = stoi(line.substr(f1 + 1, f2));
+        1:  255:        int b = stoi(line.substr(f2 + 1, line.length()));
+        1:  256:        if (is_graph) {
+        1:  257:            graph.removeEdge(a, b);
+        1:  258:            ss << "remove edge: " << a << " " << b << endl;
+        -:  259:        }
+        -:  260:        
+        -:  261:    }
+        -:  262:
+        1:  263:    else if(line[0] == 'q'){
+    #####:  264:        close(fd);
+    #####:  265:        cout << "Server closed bye bye ^_^" << endl;
+        -:  266:    }
+        1:  267:    else if(line[0] == 'w'){
+        1:  268:        closed = true;
+        1:  269:        close(fd);
+        -:  270:        //proactor->removeFd(fd);
+        1:  271:        cout << "Server closed bye bye ^_^" << endl;
+        -:  272:        //exit(0);
+        -:  273:    }
+        -:  274:
+        -:  275:    else{
+    #####:  276:        ss << "Invalid command" << endl;
+        -:  277:    }
+        -:  278:
+        6:  279:}
+        -:  280:
+        1:  281:void proactor_function(int fd) {
+        1:  282:    Graph graph;
+        1:  283:    Tree mst;
+        -:  284:    bool is_graph;
+        1:  285:    stringstream ss;
+        -:  286:    for (;;) {
+        -:  287:        
+        -:  288:        char buf[256];
+        6:  289:        memset(buf, 0, sizeof(buf));  // Clear buffer before use
+        6:  290:        int nbytes = recv(fd, buf, sizeof(buf), 0);
+        -:  291:
+        -:  292:
+        6:  293:        if (nbytes <= 0) {
+    #####:  294:            if (nbytes == 0) cout << "pollserver: socket " << fd << " hung up" << endl;
+    #####:  295:            else cerr << "recv";
+    #####:  296:            close(fd);
+        -:  297:            //proactor->removeFd(fd);
+    #####:  298:            return;
+        -:  299:        } else {
+        6:  300:            cout << "Received command: " << buf << endl;
+        6:  301:            proccessCommand(buf, graph, mst, is_graph, fd, ss);
+        -:  302:            
+        6:  303:            string response = ss.str();
+        6:  304:            if (closed) break;
+       5*:  305:            if (response == "") break;
+        5:  306:            if (send(fd, response.c_str(), response.length(), 0) == -1) {
+    #####:  307:                cerr << "send error" << endl;
+    #####:  308:                return;
+        -:  309:            }
+        -:  310:
+        5:  311:            ss.str("");
+        5:  312:            ss.clear();
+        6:  313:        }
+        5:  314:    }
+        1:  315:}
+        -:  316:
+        2:  317:void proactor_accept(int fd) {
+        -:  318:    for (;;) {
+       2*:  319:        if (closed) return;
+        -:  320:        struct sockaddr_storage remoteaddr; // Client address
+        -:  321:        socklen_t addrlen;
+        2:  322:        addrlen = sizeof(remoteaddr);
+        -:  323:        
+        2:  324:        int newfd = accept(fd, (struct sockaddr *)&remoteaddr, &addrlen);
+        -:  325:
+       1*:  326:        if (newfd == -1) {
+    #####:  327:            cerr << "accept";
+    #####:  328:            continue;
+        -:  329:        }
+        -:  330:        
+        1:  331:        proactor->addThread(newfd, proactor_function);
+        1:  332:    }
+        -:  333:}
+        -:  334:
+        -:  335:
+        -:  336:    
+        -:  337:
+        -:  338:
+        1:  339:int main(int argc, char* argv[]) {
+        -:  340:
+        1:  341:    int nport = 9035;
+        -:  342:    int opt;
+        2:  343:    while ((opt = getopt(argc, argv, "l:p:")) != -1) {
+        1:  344:        switch (opt) {
+        1:  345:            case 'p'://pipeline
+        1:  346:                nport = stoi(optarg);
+        1:  347:                is_pipeline = true;
+        1:  348:                break;
+    #####:  349:            case 'l'://leader follower
+    #####:  350:                nport = stoi(optarg);
+        -:  351:                
+    #####:  352:                is_pipeline = false;
+    #####:  353:                break;
+    #####:  354:            default:
+    #####:  355:                cerr << "Usage: " << argv[0] << " [-p pipeline] [-l leader-follower]" << endl;
+    #####:  356:                exit(1);
+        -:  357:        }
+        -:  358:    }
+        -:  359:
+        1:  360:    int listener = Listener(nport);
+        -:  361:
+        1:  362:    if (listener == -1) {
+    #####:  363:        cerr << "error getting listening socket" << endl;
+    #####:  364:        exit(1);
+        -:  365:    }
+        -:  366:
+        1:  367:    cout <<"Functions: " << endl;
+        1:  368:    cout << "g m n: create a new graph with m edges and n vertices" << endl;
+        1:  369:    cout << "p: calculate the minimum spanning tree using Prim's algorithm" << endl;
+        1:  370:    cout << "k: calculate the minimum spanning tree using Kruskal's algorithm" << endl;
+        1:  371:    cout << "n a b w: add a new edge between vertices a and b with weight w" << endl;
+        1:  372:    cout << "r a b: remove the edge between vertices a and b" << endl;
+        1:  373:    cout << "c: calculate the total weight, average distance, maximum distance, and minimum distance of the MST" << endl;
+        1:  374:    cout << "those statistics are calculated using design patterns chosen when starting the server" << endl;
+        1:  375:    cout << "w: quit and close the server	(︶︹︶) " << endl;
+        -:  376:
+        -:  377:   // reactor = new Reactor(listener, reactor_accept);
+        1:  378:    proactor = std::make_unique<Proactor>(listener, proactor_accept);
+       1*:  379:    if (!is_pipeline) lf.start();
+6368499904:  380:    while(!closed);
+        1:  381:    lf.close();
+        1:  382:    lf.join();
+        1:  383:    return 0;
+        -:  384:
+        -:  385:}

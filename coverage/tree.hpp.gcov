@@ -1,0 +1,180 @@
+        -:    0:Source:tree.hpp
+        -:    1:#pragma once
+        -:    2:#include <iostream>
+        -:    3:#include <iostream>
+        -:    4:#include <string>
+        -:    5:#include <vector>
+        -:    6:#include <algorithm>
+        -:    7:#include <climits>
+        -:    8:
+        -:    9:#include "graph.hpp"
+        -:   10:
+        -:   11:
+        -:   12:using namespace std;
+        -:   13:
+        -:   14:
+        -:   15:class Tree
+        -:   16:{
+        -:   17:    private:
+        -:   18:        vector<vector<int>> adj;
+        -:   19:        int V;
+        -:   20:        vector<vector<int>> dist;
+        -:   21:        int ready;
+        -:   22:	
+        -:   23:
+        -:   24:    public:
+        -:   25:        
+        -:   26:        Tree(int m, int n): V(n){
+        -:   27:            adj = vector<vector<int>>(n, vector<int>(n, 0));
+        -:   28:            cout << "format: 'a' 'b' " << endl;
+        -:   29:            string line;
+        -:   30:            for(int i = 0; i < m; i++){
+        -:   31:                getline(cin, line);
+        -:   32:                int a = stoi(line.substr(0, line.find(" ")));
+        -:   33:                cout << "a: " << a << endl;
+        -:   34:                int b = stoi(line.substr(line.find(" ") + 1, line.length()));
+        -:   35:                cout << "b: " << b << endl;
+        -:   36:                if(a != b){
+        -:   37:                    cout << "enter weight: "<<endl;
+        -:   38:                    int w;
+        -:   39:                    cin>>w;
+        -:   40:                    adj[a][b] = w;
+        -:   41:                }
+        -:   42:                else{
+        -:   43:                    i--;
+        -:   44:                }
+        -:   45:            }
+        -:   46:            this->ready = 0;
+        -:   47:        }
+        -:   48:
+        1:   49:		Tree(): ready(0) {}
+        -:   50:
+        -:   51:		Tree(const Graph& other){
+        -:   52:			adj = other.getAdj();
+        -:   53:            V = other.getV();
+        -:   54:            this->ready = 0;
+        -:   55:		}
+        -:   56:
+        -:   57:		Tree(const Tree& other){
+        -:   58:			adj = other.getAdj();
+        -:   59:            V = other.getV();
+        -:   60:            this->ready = 0;
+        -:   61:		}
+        -:   62:
+        2:   63:		Tree(const vector<vector<int>> other){
+        2:   64:			adj = other;
+        2:   65:            V = other.size();
+        2:   66:            this->ready = 0;
+        2:   67:		}
+        -:   68:
+        -:   69:		//Tree& operator=(const Tree
+        -:   70:
+       18:   71:		int getWeight(int a, int b) const {
+       18:   72:            return this->adj[a][b];
+        -:   73:        }
+        -:   74:
+        -:   75:
+        2:   76:        vector<vector<int>> getAdj() const {
+        2:   77:            return this->adj;
+        -:   78:        }
+        -:   79:
+       34:   80:        int getV() const {
+       34:   81:            return this->V;
+        -:   82:        }
+        -:   83:
+        -:   84:        void print(){
+        -:   85:            for(int i = 0; i < V; i++){
+        -:   86:                for(int j = 0; j < V; j++){
+        -:   87:                    cout << adj[i][j] << " ";
+        -:   88:                }
+        -:   89:                cout << endl;
+        -:   90:            }
+        -:   91:        }
+        -:   92:
+        -:   93:        bool is_ready(){return this->ready != 0;}
+        -:   94:
+        2:   95:		int calc_weight(){
+        2:   96:			int weight = 0;
+        8:   97:            for(int i = 0; i < V; i++){
+       12:   98:                for(int j = i+1; j < V; j++){
+        6:   99:                    if(adj[i][j] != 0){
+        4:  100:                        weight += adj[i][j];
+        -:  101:                    }
+        -:  102:                }
+        -:  103:            }
+        2:  104:            return weight;
+        -:  105:		}
+        -:  106:
+        2:  107:		void floydWarshall() {
+        -:  108:
+        -:  109:			// Distance matrix initialized with the input graph's adjacency matrix
+        2:  110:			this->dist = this->adj;
+        -:  111:
+        8:  112:			for (int i = 0; i < this->dist.size(); i++){
+       24:  113:				for (int j = 0; j < this->dist[i].size(); j++) {
+       18:  114:                    if (i == j) {
+        6:  115:                        this->dist[i][j] = 0;
+        -:  116:                    } else {
+       12:  117:						if (this->dist[i][j] == 0)
+        8:  118:							this->dist[i][j] = INT_MAX;
+        -:  119:                    }
+        -:  120:                }
+        -:  121:			}
+        -:  122:
+        -:  123:			// Floyd-Warshall algorithm
+        8:  124:			for (int k = 0; k < this->V; k++) {
+       24:  125:				for (int i = 0; i < this->V; i++) {
+       72:  126:					for (int j = 0; j < this->V; j++) {
+      54*:  127:						if (this->dist[i][k] != INT_MAX && this->dist[k][j] != INT_MAX && this->dist[i][k] + this->dist[k][j] < this->dist[i][j]) {
+    #####:  128:							this->dist[i][j] = this->dist[i][k] + this->dist[k][j];
+        -:  129:						}
+        -:  130:					}
+        -:  131:				}
+        -:  132:			}
+        2:  133:            this->ready = 1;
+        2:  134:		}
+        -:  135:
+        2:  136:		int minDistance() {
+        2:  137:			int min = INT_MAX;
+        8:  138:            for (int v = 0; v < this->dist.size(); v++) {
+       24:  139:				for (int i = 0; i < this->dist[v].size(); i++) {
+       18:  140:					if (this->dist[v][i] < min && i != v){
+        4:  141:						min = this->dist[v][i];
+        -:  142:					}
+        -:  143:				}
+        -:  144:            }
+        2:  145:            return min;
+        -:  146:		}
+        -:  147:
+        2:  148:		int maxDistance() {
+        2:  149:			int max = INT_MIN;
+        8:  150:            for (int v = 0; v < this->dist.size(); v++) {
+       24:  151:				for (int i = 0; i < this->dist[v].size(); i++) {
+       18:  152:					if (this->dist[v][i] > max && this->dist[v][i] != INT_MAX){
+        4:  153:						max = this->dist[v][i];
+        -:  154:					}
+        -:  155:				}
+        -:  156:            }
+        2:  157:            return max;
+        -:  158:		}
+        -:  159:
+        2:  160:		int avgDistance() {
+        2:  161:			int sum = 0;
+        2:  162:			int count = 0;
+        8:  163:            for (int v = 0; v < this->V; v++) {
+       18:  164:				for (int i = v; i < this->V; i++) {
+       12:  165:					if (this->dist[v][i] != INT_MAX && v != i){
+        4:  166:						sum += this->dist[v][i];
+        4:  167:						count++;
+        -:  168:					}
+        -:  169:				}
+        -:  170:            }
+        2:  171:            return sum / count;
+        -:  172:		}
+        -:  173:
+        2:  174:        Tree& operator=(const Tree& other){
+        2:  175:            adj = other.getAdj();
+        2:  176:            V = other.getV();
+        2:  177:            return *this;
+        -:  178:        }
+        -:  179:};

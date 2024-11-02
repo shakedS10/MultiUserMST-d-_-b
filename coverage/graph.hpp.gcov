@@ -1,0 +1,59 @@
+        -:    0:Source:graph.hpp
+        -:    1:#pragma once
+        -:    2:#include <iostream>
+        -:    3:#include <iostream>
+        -:    4:#include <string>
+        -:    5:#include <vector>
+        -:    6:#include <algorithm>
+        -:    7:
+        -:    8:
+        -:    9:using namespace std;
+        -:   10:
+        -:   11:
+        -:   12:class Graph
+        -:   13:{
+        -:   14:    vector<vector<int>> adj;
+        -:   15:    int V;
+        -:   16:
+        -:   17:    public:
+        1:   18:        Graph(int m, int n): V(n){
+        1:   19:            this->adj = vector<vector<int>>(n, vector<int>(n, 0));
+        -:   20:            
+        1:   21:        }
+        -:   22:
+        1:   23:        Graph() = default;
+        -:   24:
+        -:   25:        Graph(const vector<vector<int>> other){
+        -:   26:			adj = other;
+        -:   27:            V = other.size();
+        -:   28:		}
+        -:   29:
+        3:   30:        void addEdge(int a, int b, int weight)  {
+        3:   31:            this->adj[a][b] = weight;
+        3:   32:        }
+        -:   33:
+        1:   34:        void removeEdge(int a, int b)  {
+        1:   35:            this->adj[a][b] = 0;
+        1:   36:        }
+        -:   37:
+        9:   38:        int getWeight(int a, int b) const {
+        9:   39:            return this->adj[a][b];
+        -:   40:        }
+        -:   41:
+        2:   42:        vector<vector<int>> getAdj() const {
+        2:   43:            return this->adj;
+        -:   44:        }
+        -:   45:
+        2:   46:        int getV() const {
+        2:   47:            return this->V;
+        -:   48:        }
+        -:   49:
+        -:   50:        void print(){
+        -:   51:            for(int i = 0; i < V; i++){
+        -:   52:                for(int j = 0; j < V; j++){
+        -:   53:                    cout << adj[i][j] << " ";
+        -:   54:                }
+        -:   55:                cout << endl;
+        -:   56:            }
+        -:   57:        }
+        -:   58:};

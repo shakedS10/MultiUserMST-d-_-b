@@ -1,0 +1,71 @@
+        -:    0:Source:pipeline.hpp
+        -:    1:#include "active_object.hpp"
+        -:    2:#include "graph.hpp"
+        -:    3:#include "tree.hpp"
+        -:    4:
+        -:    5:#include <functional>
+        -:    6:#include <utility>
+        -:    7:#include <iostream>
+        -:    8:#include <vector>
+        -:    9:#include <thread>
+        -:   10:#include <sstream>
+        -:   11:
+        -:   12:using namespace std;
+        -:   13:
+        -:   14://typedef void (*taskFunc)();
+        -:   15://typedef void (*runTask)(int id, Graph* graph, Tree* mst, bool is_kruskal, stringstream& ss);
+        -:   16:
+        -:   17:using PLtaskFunc = function<void()>;
+        -:   18:using runTask = function<void(int& id, stringstream& ss)>;
+        -:   19:
+        -:   20:
+        -:   21:class PipeLine{
+        -:   22:private:
+        -:   23:	vector<ActiveObject> pipes;
+        -:   24:	
+        -:   25:	int n;
+        -:   26:public:
+        -:   27:    
+        -:   28:
+        2:   29:	PipeLine(int n){
+        2:   30:		this->n = n;
+        -:   31:
+       12:   32:		for (int i = 0; i < n; i++){
+       10:   33:			this->pipes.push_back(ActiveObject());
+        -:   34:		}
+        2:   35:	}
+        -:   36:
+        -:   37:	
+        -:   38:
+        2:   39:	stringstream start(runTask func){
+       12:   40:		for (int i = 0; i < this->n; i++){
+       10:   41:			this->pipes[i].start();
+        -:   42:		}
+        2:   43:		stringstream ss;
+        2:   44:		int id = 0;
+        -:   45:		//int tmp = -1;
+        4:   46:		this->pipes[id].request([&id, func, &ss] () {func(id, ss);});
+        -:   47:		while (1)
+        -:   48:		{
+        -:   49:			//cout << id << this->n << endl;
+     2962:   50:			if (this->pipes[id].is_end_task()){
+       10:   51:				id++;
+       10:   52:				if (id >= this->n) break;
+       16:   53:				this->pipes[id].request([&id, func, &ss] () {func(id, ss);});
+        -:   54:				//cout << id << this->n << endl;
+        -:   55:			}
+     2960:   56:		}
+        -:   57:		//cout << id<<1 << endl;
+        4:   58:		return ss;
+    =====:   59:	}
+        -:   60:
+        2:   61:	void join(){
+       12:   62:		for (int i = 0; i < this->n; i++){
+       10:   63:			this->pipes[i].setCondition(true);
+        -:   64:		}
+       12:   65:        for (int i = 0; i < this->n; i++){
+       10:   66:            this->pipes[i].join();
+        -:   67:        }
+        2:   68:    }
+        -:   69:};
+        -:   70:

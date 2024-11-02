@@ -1,0 +1,130 @@
+==138182== Memcheck, a memory error detector
+==138182== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==138182== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==138182== Command: ./main -p 9999
+==138182== 
+Functions: 
+g m n: create a new graph with m edges and n vertices
+p: calculate the minimum spanning tree using Prim's algorithm
+k: calculate the minimum spanning tree using Kruskal's algorithm
+n a b w: add a new edge between vertices a and b with weight w
+r a b: remove the edge between vertices a and b
+c: calculate the total weight, average distance, maximum distance, and minimum distance of the MST
+those statistics are calculated using design patterns chosen when starting the server
+w: quit and close the server	(︶︹︶) 
+Received command: g 2,3
+
+ProccessCommand: g 2,3
+
+format: 'a' 'b' 'w'
+a: 0
+b: 1
+w: 2
+a: 0
+b: 2
+w: 3
+Received command: p
+
+ProccessCommand: p
+
+Received command: k
+
+ProccessCommand: k
+
+Received command: w
+
+ProccessCommand: w
+
+Server closed bye bye ^_^
+==138182== 
+==138182== Process terminating with default action of signal 27 (SIGPROF)
+==138182==    at 0x4BC5A1A: __open_nocancel (open64_nocancel.c:39)
+==138182==    by 0x4BD456F: write_gmon (gmon.c:370)
+==138182==    by 0x4BD4DDE: _mcleanup (gmon.c:444)
+==138182==    by 0x4AF1A55: __cxa_finalize (cxa_finalize.c:83)
+==138182==    by 0x123DA6: ??? (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x400624D: _dl_fini (dl-fini.c:142)
+==138182==    by 0x4AF1494: __run_exit_handlers (exit.c:113)
+==138182==    by 0x4AF160F: exit (exit.c:143)
+==138182==    by 0x4AD5D96: (below main) (libc_start_call_main.h:74)
+==138182== 
+==138182== HEAP SUMMARY:
+==138182==     in use at exit: 550,048 bytes in 10 blocks
+==138182==   total heap usage: 215 allocs, 205 frees, 583,937 bytes allocated
+==138182== 
+==138182== 288 bytes in 1 blocks are possibly lost in loss record 2 of 9
+==138182==    at 0x484DA83: calloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==138182==    by 0x40147D9: calloc (rtld-malloc.h:44)
+==138182==    by 0x40147D9: allocate_dtv (dl-tls.c:375)
+==138182==    by 0x40147D9: _dl_allocate_tls (dl-tls.c:634)
+==138182==    by 0x4B417B4: allocate_stack (allocatestack.c:430)
+==138182==    by 0x4B417B4: pthread_create@@GLIBC_2.34 (pthread_create.c:647)
+==138182==    by 0x493C328: std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==138182==    by 0x14763A: std::thread::thread<void (*&)(int), int&, void>(void (*&)(int), int&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x146D60: Proactor::addThread(int, void (*)(int)) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x146B76: Proactor::Proactor(int, void (*)(int)) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x13370D: std::_MakeUniq<Proactor>::__single_object std::make_unique<Proactor, int&, void (&)(int)>(int&, void (&)(int)) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x12837F: main (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182== 
+==138182== 288 bytes in 1 blocks are possibly lost in loss record 3 of 9
+==138182==    at 0x484DA83: calloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==138182==    by 0x40147D9: calloc (rtld-malloc.h:44)
+==138182==    by 0x40147D9: allocate_dtv (dl-tls.c:375)
+==138182==    by 0x40147D9: _dl_allocate_tls (dl-tls.c:634)
+==138182==    by 0x4B417B4: allocate_stack (allocatestack.c:430)
+==138182==    by 0x4B417B4: pthread_create@@GLIBC_2.34 (pthread_create.c:647)
+==138182==    by 0x493C328: std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==138182==    by 0x14763A: std::thread::thread<void (*&)(int), int&, void>(void (*&)(int), int&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x146D60: Proactor::addThread(int, void (*)(int)) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x127C8F: proactor_accept(int) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1495E4: void std::__invoke_impl<void, void (*)(int), int>(std::__invoke_other, void (*&&)(int), int&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1494EA: std::__invoke_result<void (*)(int), int>::type std::__invoke<void (*)(int), int>(void (*&&)(int), int&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1493C9: void std::thread::_Invoker<std::tuple<void (*)(int), int> >::_M_invoke<0ul, 1ul>(std::_Index_tuple<0ul, 1ul>) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x149342: std::thread::_Invoker<std::tuple<void (*)(int), int> >::operator()() (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x14930A: std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)(int), int> > >::_M_run() (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182== 
+==138182== 288 bytes in 1 blocks are possibly lost in loss record 4 of 9
+==138182==    at 0x484DA83: calloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==138182==    by 0x40147D9: calloc (rtld-malloc.h:44)
+==138182==    by 0x40147D9: allocate_dtv (dl-tls.c:375)
+==138182==    by 0x40147D9: _dl_allocate_tls (dl-tls.c:634)
+==138182==    by 0x4B417B4: allocate_stack (allocatestack.c:430)
+==138182==    by 0x4B417B4: pthread_create@@GLIBC_2.34 (pthread_create.c:647)
+==138182==    by 0x493C328: std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==138182==    by 0x1327D9: std::thread::thread<ActiveObject::start()::{lambda()#1}, , void>(ActiveObject::start()::{lambda()#1}&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x12EE06: ActiveObject::start() (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x12F3ED: PipeLine::start(std::function<void (int&, std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&)>) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x126562: proccessCommand(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Graph&, Tree&, bool&, int, std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1276A7: proactor_function(int) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1495E4: void std::__invoke_impl<void, void (*)(int), int>(std::__invoke_other, void (*&&)(int), int&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1494EA: std::__invoke_result<void (*)(int), int>::type std::__invoke<void (*)(int), int>(void (*&&)(int), int&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1493C9: void std::thread::_Invoker<std::tuple<void (*)(int), int> >::_M_invoke<0ul, 1ul>(std::_Index_tuple<0ul, 1ul>) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182== 
+==138182== 576 bytes in 2 blocks are possibly lost in loss record 6 of 9
+==138182==    at 0x484DA83: calloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==138182==    by 0x40147D9: calloc (rtld-malloc.h:44)
+==138182==    by 0x40147D9: allocate_dtv (dl-tls.c:375)
+==138182==    by 0x40147D9: _dl_allocate_tls (dl-tls.c:634)
+==138182==    by 0x4B417B4: allocate_stack (allocatestack.c:430)
+==138182==    by 0x4B417B4: pthread_create@@GLIBC_2.34 (pthread_create.c:647)
+==138182==    by 0x493C328: std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==138182==    by 0x1327D9: std::thread::thread<ActiveObject::start()::{lambda()#1}, , void>(ActiveObject::start()::{lambda()#1}&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x12EE06: ActiveObject::start() (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x12F3ED: PipeLine::start(std::function<void (int&, std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&)>) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x12622E: proccessCommand(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Graph&, Tree&, bool&, int, std::__cxx11::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1276A7: proactor_function(int) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1495E4: void std::__invoke_impl<void, void (*)(int), int>(std::__invoke_other, void (*&&)(int), int&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1494EA: std::__invoke_result<void (*)(int), int>::type std::__invoke<void (*)(int), int>(void (*&&)(int), int&&) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182==    by 0x1493C9: void std::thread::_Invoker<std::tuple<void (*)(int), int> >::_M_invoke<0ul, 1ul>(std::_Index_tuple<0ul, 1ul>) (in /mnt/c/Users/shake/vsl/Nefolder/project/main)
+==138182== 
+==138182== LEAK SUMMARY:
+==138182==    definitely lost: 0 bytes in 0 blocks
+==138182==    indirectly lost: 0 bytes in 0 blocks
+==138182==      possibly lost: 1,440 bytes in 5 blocks
+==138182==    still reachable: 548,608 bytes in 5 blocks
+==138182==         suppressed: 0 bytes in 0 blocks
+==138182== Reachable blocks (those to which a pointer was found) are not shown.
+==138182== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==138182== 
+==138182== For lists of detected and suppressed errors, rerun with: -s
+==138182== ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

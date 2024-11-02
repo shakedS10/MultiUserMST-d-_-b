@@ -1,0 +1,186 @@
+        -:    0:Source:factory.hpp
+        -:    1:#pragma once
+        -:    2:
+        -:    3:#include <iostream>
+        -:    4:#include <iostream>
+        -:    5:#include <string>
+        -:    6:#include <vector>
+        -:    7:#include <algorithm>
+        -:    8:#include <climits>
+        -:    9:
+        -:   10:#include "graph.hpp"
+        -:   11:#include "tree.hpp"
+        -:   12:
+        -:   13:using namespace std;
+        -:   14:
+        -:   15:struct Edge {
+        -:   16:    int src, dest, weight;
+        -:   17:};
+        -:   18:
+        -:   19:class Algo{
+        -:   20:	public:
+        -:   21:		virtual Tree execute(Graph& graph) = 0;
+       2*:   22:		virtual ~Algo() {}
+------------------
+_ZN4AlgoD0Ev:
+    #####:   22:		virtual ~Algo() {}
+------------------
+_ZN4AlgoD2Ev:
+        2:   22:		virtual ~Algo() {}
+------------------
+        -:   23:};
+        -:   24:
+        -:   25:class Prim : public Algo{
+        -:   26:	private:
+        2:   27:		int minKey(const vector<int>& key, const vector<bool>& inMST, int V) {
+        2:   28:			int min = INT_MAX, min_index;
+        -:   29:
+        8:   30:			for (int v = 0; v < V; v++) {
+        6:   31:				if (!inMST[v] && key[v] < min) {
+        3:   32:					min = key[v], min_index = v;
+        -:   33:				}
+        -:   34:			}
+        -:   35:
+        2:   36:			return min_index;
+        -:   37:		}
+        -:   38:	public:
+        1:   39:	    Tree execute(Graph& graph) override {
+        1:   40:			int V = graph.getV(); 
+        -:   41:
+        -:   42:			// vector to store mst
+        1:   43:			vector<int> parent(V);
+        -:   44:
+        -:   45:			// values used to pick minimum weight edge in cut
+        1:   46:			vector<int> key(V, INT_MAX);
+        -:   47:
+        -:   48:			// in mst or not
+        1:   49:			vector<bool> inMST(V, false);
+        -:   50:
+        -:   51:			//choose the first vertex as root
+        1:   52:			key[0] = 0;        
+        1:   53:			parent[0] = -1;    
+        -:   54:
+        1:   55:			vector<vector<int>> g = graph.getAdj();
+        -:   56:			// its obvious that the MST will have V-1 edges
+        3:   57:			for (int count = 0; count < V - 1; count++) {
+        -:   58:				// pick mnimum key vertex from the set of vertices not yet included in MST using function minKey
+        2:   59:				int u = this->minKey(key, inMST, V);
+        -:   60:
+        -:   61:				// add the picked vertex to the MST
+        2:   62:				inMST[u] = true;
+        -:   63:
+        -:   64:				
+        -:   65:				// update the key and parent index of the adjacent vertices of the picked vertex.
+        8:   66:				for (int v = 0; v < V; v++) {
+        -:   67:					// graph[u][v] is non-zero only for adjacent vertices
+        -:   68:					// update key only if graph[u][v] is smaller than key[v] and v is not yet included in MST
+        6:   69:					if (g[u][v] && !inMST[v] && g[u][v] < key[v]) {
+        2:   70:						parent[v] = u;
+        2:   71:						key[v] = g[u][v];
+        -:   72:					}
+        -:   73:				}
+        -:   74:			}
+        -:   75:
+        -:   76:			// create an adjacency matrix for the directed MST
+        2:   77:			vector<vector<int>> mst(V, vector<int>(V, 0));
+        -:   78:
+        -:   79:			// construct the MST graph, directed from parent to child
+        3:   80:			for (int i = 1; i < V; i++) {
+        2:   81:				mst[parent[i]][i] = g[parent[i]][i]; 
+        -:   82:			}
+        1:   83:			Tree tree(mst);
+        2:   84:			return tree;
+        1:   85:		}
+        -:   86:};
+        -:   87:
+        -:   88:class Kruskal : public Algo{
+        -:   89:	private:
+        -:   90:	    // a utility function to find the root of an element with path compression
+        8:   91:		int findRoot(vector<int>& parent, int i) {
+        8:   92:			if (parent[i] != i)
+    #####:   93:				parent[i] = this->findRoot(parent, parent[i]);
+        8:   94:			return parent[i];
+        -:   95:		}
+        -:   96:
+        -:   97:		// a utility function to union two subsets
+        2:   98:		void unionSets(vector<int>& parent, vector<int>& rank, int x, int y) {
+        2:   99:			int rootX = this->findRoot(parent, x);
+        2:  100:			int rootY = this->findRoot(parent, y);
+        -:  101:
+        2:  102:			if (rank[rootX] < rank[rootY]) {
+    #####:  103:				parent[rootX] = rootY;
+        2:  104:			} else if (rank[rootX] > rank[rootY]) {
+        1:  105:				parent[rootY] = rootX;
+        -:  106:			} else {
+        1:  107:				parent[rootY] = rootX;
+        1:  108:				rank[rootX]++;
+        -:  109:			}
+        2:  110:		}
+        -:  111:	public:
+        1:  112:	    Tree execute(Graph& graph) override {
+        1:  113:			int V = graph.getV();  // Number of vertices
+        1:  114:			vector<Edge> edges;
+        1:  115:			vector<vector<int>> g = graph.getAdj();
+        -:  116:			// make a list of all the edges in the graph
+        4:  117:			for (int i = 0; i < V; i++) {
+       12:  118:				for (int j = 0; j < V; j++) {
+        9:  119:					if (g[i][j] != 0 && g[i][j] != INT_MAX) {
+        2:  120:						edges.push_back({i, j, g[i][j]});
+        -:  121:					}
+        -:  122:				}
+        -:  123:			}
+        -:  124:
+        -:  125:			// sort the edges in ascending order of their weights
+        1:  126:			sort(edges.begin(), edges.end(), [](Edge a, Edge b) {
+        1:  127:				return a.weight < b.weight;
+        -:  128:			});
+        -:  129:
+        -:  130:			// parent vector to store the parent of each vertex
+        1:  131:			vector<int> parent(V);
+        1:  132:			vector<int> rank(V, 0);
+        -:  133:
+        4:  134:			for (int i = 0; i < V; i++)
+        3:  135:				parent[i] = i;
+        -:  136:
+        -:  137:			// adjacency matrix to store the MST
+        2:  138:			vector<vector<int>> mst(V, vector<int>(V, 0));
+        -:  139:
+        -:  140:			// pick edges one by one and add them to the MST if they do not form a cycle
+        1:  141:			int edgesInMST = 0;
+        3:  142:			for (auto& edge : edges) {
+        2:  143:				if (edgesInMST == V - 1)  // again when the mst has V-1 edges stop
+    #####:  144:					break;
+        -:  145:
+        2:  146:				int u = edge.src;
+        2:  147:				int v = edge.dest;
+        -:  148:
+        2:  149:				int rootU = this->findRoot(parent, u);
+        2:  150:				int rootV = this->findRoot(parent, v);
+        -:  151:
+        2:  152:				if (rootU != rootV) {
+        2:  153:					mst[u][v] = edge.weight;
+        2:  154:					this->unionSets(parent, rank, rootU, rootV);
+        2:  155:					edgesInMST++;
+        -:  156:				}
+        -:  157:			}
+        -:  158:
+        1:  159:			Tree tree(mst);
+        2:  160:			return tree;
+        1:  161:		}
+        -:  162:};
+        -:  163:
+        -:  164:
+        -:  165:
+        -:  166:
+        -:  167:class MSTFactory {
+        -:  168:    public:
+        2:  169:        static std::unique_ptr<Algo> createMST(string type) {
+        2:  170:            if (type == "prim") {
+        1:  171:                return std::make_unique<Prim>();
+        1:  172:            } else if (type == "kruskal") {
+        1:  173:                return std::make_unique<Kruskal>();
+        -:  174:            } else {
+    #####:  175:                return nullptr;
+        -:  176:            }
+        -:  177:        }
+        -:  178:};
